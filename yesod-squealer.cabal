@@ -1,0 +1,90 @@
+cabal-version: >= 1.10
+build-type   : Simple
+
+name    : yesod-squealer
+version : 0.1.0.0
+synopsis: Yesod REST API for Squealer databases
+category: Web
+
+description:
+  A representation of the Siren hypermedia type for use in RESTful APIs.
+
+author      : Manuel Gómez
+maintainer  : targen@gmail.com
+copyright   : © Manuel Gómez, 2014
+license     : BSD3
+license-file: LICENSE
+
+-- extra-source-files: 
+
+
+
+library
+  hs-source-dirs  : source
+  default-language: Haskell2010
+
+  ghc-options:
+    -Wall
+
+  exposed-modules:
+    Data.Siren
+    Yesod.Squealer
+
+  other-modules:
+    Yesod.Squealer.Routes
+
+    Yesod.Squealer.Handler
+    Yesod.Squealer.Handler.Column
+    Yesod.Squealer.Handler.Database
+    Yesod.Squealer.Handler.Rows
+    Yesod.Squealer.Handler.Table
+    Yesod.Squealer.Handler.Version
+
+  other-extensions:
+
+  build-depends:
+      aeson                >= 0.6.2.1  && < 0.7
+    , attoparsec           >= 0.10.4.0 && < 0.11
+    , base                 >= 4.6      && < 4.7
+    , base-unicode-symbols >= 0.2.2.4  && < 0.3
+    , containers           >= 0.5.0.0  && < 0.6
+    , data-default         >= 0.5.3    && < 0.6
+    , hssqlppp             >= 0.4.0    && < 0.5
+    , http-types           >= 0.8.3    && < 0.9
+    , lens                 >= 3.10.0.1 && < 3.11
+    , mtl                  >= 2.1      && < 2.2
+    , postgresql-simple    >= 0.3.9.1  && < 0.4
+    , squealer             >= 0.2      && < 0.3
+    , text                 >= 0.11     && < 0.12
+    , transformers         >= 0.2.0.0  && < 0.4
+    , unordered-containers >= 0.2.3.3  && < 0.3
+    , yesod-core           >= 1.2      && < 1.3
+    , yesod-routes         >= 1.2.0.2  && < 1.3
+
+
+
+executable api-test
+  hs-source-dirs  : api-test
+  default-language: Haskell2010
+  main-is         : Main.hs
+
+  ghc-options:
+    -Wall
+    -threaded
+
+  -- other-modules:
+
+  build-depends:
+      base                 >= 4.6      && < 4.7
+    , base-unicode-symbols >= 0.2.2.4  && < 0.3
+    , bytestring           >= 0.10.0.2 && < 0.11
+    , groundhog            >= 0.4.0.2  && < 0.5
+    , groundhog-postgresql >= 0.4.0.2  && < 0.5
+    , postgresql-simple    >= 0.3.9.1  && < 0.4
+    , resource-pool        >= 0.2.1.1  && < 0.3
+    , squealer             >= 0.2      && < 0.3
+    , text                 >= 0.11.3.1 && < 0.12
+    , yaml                 >= 0.8.5.2  && < 0.9
+    , yesod-core           >= 1.2      && < 1.3
+    , yesod-routes         >= 1.2.0.2  && < 1.3
+    , yesod-squealer       >= 0.1      && < 0.2
