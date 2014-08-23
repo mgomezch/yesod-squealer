@@ -19,7 +19,7 @@ where
 import Control.Applicative              (pure)
 import Control.Arrow                    (second)
 import Control.Category.Unicode         ((∘))
-import Control.Lens.Combinators         ((&))
+import Control.Lens.Lens                ((&))
 import Control.Monad                    (when)
 import Control.Monad.IO.Class           (liftIO)
 import Control.Monad.Trans              (lift)

@@ -20,7 +20,7 @@ where
 import Control.Applicative          (pure)
 import Control.Category.Unicode     ((∘))
 import Control.Lens.At              (at)
-import Control.Lens.Combinators     ((&))
+import Control.Lens.Lens            ((&))
 import Control.Lens.Setter          ((%~), (.~), mapped)
 import Control.Lens.Prism           (Prism', isn't)
 import Control.Lens.Tuple           (_2)

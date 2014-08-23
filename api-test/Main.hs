@@ -23,7 +23,7 @@ import Database.PostgreSQL.Simple    (ConnectInfo(ConnectInfo, connectDatabase, 
 import Prelude                       (error)
 import System.Environment            (getArgs)
 import System.IO                     (IO)
-import Yesod.Core                    (Approot(ApprootStatic), Yesod(approot, yesodMiddleware), mkYesod, renderRoute)
+import Yesod.Core                    (Yesod(yesodMiddleware), mkYesod, renderRoute)
 import Yesod.Core.Dispatch           (warp)
 import Yesod.Core.Handler            (addHeader, getYesod)
 import Yesod.Routes.Parse            (parseRoutes)
@@ -65,6 +65,10 @@ getHomeR = pure "ok"
 main ∷ IO ()
 main
   = do
+    -- This is only to silence unimportant warnings.
+    _ ← pure ([] ∷ [Widget])
+    _ ← pure resourcesApp
+
     [filename]
       ← getArgs
 
