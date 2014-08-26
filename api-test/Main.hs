@@ -10,24 +10,30 @@ module Main (main) where
 import Control.Applicative           (pure)
 import Control.Monad.Unicode         ((=≪))
 import Control.Category.Unicode      ((∘))
-import Data.ByteString.Char8         (readFile, unpack)
+import Data.ByteString.Char8         (readFile)
 import Data.Either                   (either)
 import Data.Function                 (($), id)
 import Data.Functor                  ((<$>))
+import Data.Maybe                    (listToMaybe, maybe)
 import Data.Pool                     (Pool)
+import Data.String                   (fromString)
 import Data.Text                     (Text)
 import Data.Yaml                     (decodeEither)
 import Database.Groundhog.Core       (withConn)
 import Database.Groundhog.Postgresql (Postgresql(Postgresql), createPostgresqlPool)
 import Database.PostgreSQL.Simple    (ConnectInfo(ConnectInfo, connectDatabase, connectHost, connectPassword, connectPort, connectUser), postgreSQLConnectionString)
+import Database.Squealer.Types       (Database(Database, dbname), unIdentifier)
 import Prelude                       (error)
 import System.Environment            (getArgs)
 import System.IO                     (IO)
-import Yesod.Core                    (Yesod(yesodMiddleware), mkYesod, renderRoute)
+import Yesod.Core                    (Approot(ApprootMaster), Yesod(approot, yesodMiddleware), mkYesod, renderRoute)
 import Yesod.Core.Dispatch           (warp)
 import Yesod.Core.Handler            (addHeader, getYesod)
 import Yesod.Routes.Parse            (parseRoutes)
 import Yesod.Squealer                (Squealer(Squealer, database), YesodSquealer(withConnection))
+
+import qualified Data.ByteString.Char8 as B8 (unpack)
+import qualified Data.Text             as T  (unpack)
 
 
 
@@ -35,9 +41,13 @@ data App
   = App
     { squealer ∷ Squealer
     , connPool ∷ Pool Postgresql
+    , appRoot  ∷ Text
     }
 
 instance Yesod App where
+  approot
+    = ApprootMaster appRoot
+
   yesodMiddleware handler
     = do
       addHeader "Access-Control-Allow-Origin" "*"
@@ -52,15 +62,8 @@ instance YesodSquealer App where
       getConnection (Postgresql c) = c
 
 mkYesod "App" [parseRoutes|
-/9000             HomeR     OPTIONS GET
-/9000/v1/database SquealerR Squealer squealer
+/v1/database SquealerR Squealer squealer
 |]
-
-optionsHomeR ∷ Handler ()
-optionsHomeR = pure ()
-
-getHomeR ∷ Handler Text
-getHomeR = pure "ok"
 
 main ∷ IO ()
 main
@@ -69,8 +72,13 @@ main
     _ ← pure ([] ∷ [Widget])
     _ ← pure resourcesApp
 
-    [filename]
+    (filename : maybeAppRoot)
       ← getArgs
+
+    let
+      appRoot
+        = maybe "" fromString
+        $ listToMaybe maybeAppRoot
 
     database
       ← either error id
@@ -79,7 +87,7 @@ main
 
     connPool
       ← createPostgresqlPool
-        connectionString
+        (connectionString database)
         poolSize
 
     warp
@@ -88,16 +96,18 @@ main
   where
     port = 9000
     poolSize = 10
-    connectInfo
-      = ConnectInfo
-        { connectHost     = "localhost"
-        , connectPort     = 5432
-        , connectUser     = "username"
-        , connectPassword = "xyzzy"
-        , connectDatabase = "database"
-        }
 
     connectionString
-      = unpack
+      Database {..}
+      = B8.unpack
       ∘ postgreSQLConnectionString
       $ connectInfo
+      where
+        connectInfo
+          = ConnectInfo
+            { connectHost     = ""
+            , connectPort     = -1
+            , connectUser     = ""
+            , connectPassword = ""
+            , connectDatabase = T.unpack $ unIdentifier dbname
+            }
