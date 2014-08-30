@@ -10,9 +10,9 @@
 {-# LANGUAGE ViewPatterns              #-}
 
 module Yesod.Squealer.Handler
-  ( escape
+  ( escape, escapeFieldName
   , handleParameters
-  , runSQL
+  , runSQL, runSQLDebug
   )
 where
 
@@ -38,7 +38,8 @@ import Database.HsSqlPpp.Pretty         (printStatements)
 import Database.PostgreSQL.Simple       (Connection)
 import Database.PostgreSQL.Simple.Types (Query)
 import Database.Squealer.Types          (Identifier(Identifier), escapeIdentifier)
-import System.IO                        (IO)
+import Network.URI                      (escapeURIString, isUnreserved)
+import System.IO                        (IO, putStr)
 import Yesod.Core                       (getRouteToParent)
 import Yesod.Core.Handler               (getCurrentRoute, getRequest, getUrlRenderParams, getYesod, redirect)
 import Yesod.Core.Types                 (reqGetParams)
@@ -107,9 +108,25 @@ runSQL q
   ∘ fromString ∘ printStatements ∘ pure
 
 
+runSQLDebug
+  ∷ (Connection → Query → IO a)
+  → Statement
+  → SquealerHandler a
+
+runSQLDebug q s
+  = do
+    liftIO ∘ putStr ∘ printStatements $ pure s
+    runSQL q s
+
+
 
 escape ∷ Text → String
 escape
   = unpack
   ∘ escapeIdentifier
   ∘ Identifier
+
+
+
+escapeFieldName ∷ String → String
+escapeFieldName = escapeURIString isUnreserved

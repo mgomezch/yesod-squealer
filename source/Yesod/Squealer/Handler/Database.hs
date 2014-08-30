@@ -21,7 +21,7 @@ import Data.Aeson.Types         ((.=))
 import Data.Function            (($), id)
 import Data.Functor             ((<$>))
 import Data.Monoid              (mempty)
-import Data.Siren               ((⤠), Entity(entityProperties, entitySubEntities, entityActions), RenderLink, embedEntity, embedLink, embeddingActions, maybeEmbedded, mkEntity)
+import Data.Siren               ((⤠), Entity(entityActions, entityProperties, entitySubEntities, entityTitle), RenderLink, embedEntity, embedLink, embeddingActions, maybeEmbedded, mkEntity)
 import Database.Squealer.Types  (Database(Database, dbname, tables), unIdentifier, Table(Table, columns, key, tablename))
 import Prelude                  ((+), (-), Integer)
 import Yesod.Core.Content       (TypedContent)
@@ -59,12 +59,17 @@ sirenDatabase
 sirenDatabase
   Database {..}
   = (mkEntity $ ?render self) -- TODO: use lenses
-    { entityProperties
+    { entityTitle
+    , entityProperties
     , entitySubEntities
     , entityActions
     }
   where
     self = (DatabaseR, mempty)
+
+    entityTitle
+      = pure
+      $ unIdentifier dbname
 
     entityProperties
       = [ "database" .= dbname

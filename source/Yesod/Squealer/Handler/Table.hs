@@ -26,7 +26,7 @@ import Data.Functor             ((<$>))
 import Data.Maybe               (maybe)
 import Data.Monoid              (mempty)
 import Data.Monoid.Unicode      ((⊕))
-import Data.Siren               ((⤠), Entity(entityActions, entityLinks, entityProperties, entitySubEntities), RenderLink, embedEntity, embedLink, embeddingActions, mkEntity)
+import Data.Siren               ((⤠), Entity(entityActions, entityLinks, entityProperties, entitySubEntities, entityTitle), RenderLink, embedEntity, embedLink, embeddingActions, mkEntity)
 import Data.Text                (Text)
 import Database.Squealer.Types  (Database(Database, dbname, tables), Table(Table, columns, key, tablename), colname, unIdentifier)
 import Prelude                  ((+), (-), Integer)
@@ -71,7 +71,8 @@ sirenTable
 sirenTable
   Table {..}
   = (mkEntity $ ?render self) -- TODO: use lenses
-    { entityProperties
+    { entityTitle
+    , entityProperties
     , entitySubEntities
     , entityLinks
     , entityActions
@@ -80,6 +81,9 @@ sirenTable
     self = (TableR tablename', mempty)
 
     tablename' = unIdentifier tablename
+
+    entityTitle
+      = pure tablename'
 
     entityProperties
       = [ "table name" .= tablename
