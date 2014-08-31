@@ -25,7 +25,7 @@ import Data.Maybe               (maybe)
 import Data.Map                 (delete)
 import Data.Monoid              (mempty)
 import Data.Monoid.Unicode      ((⊕))
-import Data.Siren               ((⤠), Entity(entityLinks, entityProperties), RenderLink, mkEntity)
+import Data.Siren               ((⤠), Entity(entityLinks, entityProperties, entityTitle), RenderLink, mkEntity)
 import Data.Text                (Text)
 import Database.Squealer.Types  (Column(Attribute, Reference, colname, coltype, target), Database(Database, dbname, tables), Table(Table, columns, key, tablename), colname, unIdentifier)
 import Yesod.Core.Content       (TypedContent)
@@ -71,13 +71,17 @@ sirenColumn
   tablename'
   column
   = (mkEntity $ ?render self) -- TODO: use lenses
-    { entityProperties
+    { entityTitle
+    , entityProperties
     , entityLinks
     }
   where
     self = (ColumnR tablename' colname', mempty)
 
     colname' = unIdentifier $ colname column
+
+    entityTitle
+      = pure colname'
 
     entityProperties
       = [ "column name" .= colname'
