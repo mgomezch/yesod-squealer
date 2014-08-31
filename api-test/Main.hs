@@ -69,6 +69,7 @@ main ∷ IO ()
 main
   = do
     -- This is only to silence unimportant warnings.
+    _ ← pure ([] ∷ [Handler ()])
     _ ← pure ([] ∷ [Widget])
     _ ← pure resourcesApp
 

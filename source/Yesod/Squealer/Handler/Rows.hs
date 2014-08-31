@@ -340,7 +340,7 @@ getRowsR tablename'
               = key
               ⊕ columns
 
-            versionColumns @ (attributeColumns, referenceColumns)
+            (attributeColumns, referenceColumns)
               = partition
                 (hasn't _Reference)
                 allColumns
