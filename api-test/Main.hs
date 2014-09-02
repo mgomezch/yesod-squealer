@@ -14,7 +14,7 @@ import Data.ByteString.Char8         (readFile)
 import Data.Either                   (either)
 import Data.Function                 (($), id)
 import Data.Functor                  ((<$>))
-import Data.Maybe                    (listToMaybe, maybe)
+import Data.Maybe                    (maybe)
 import Data.Pool                     (Pool)
 import Data.String                   (fromString)
 import Data.Text                     (Text)
@@ -24,8 +24,9 @@ import Database.Groundhog.Postgresql (Postgresql(Postgresql), createPostgresqlPo
 import Database.PostgreSQL.Simple    (ConnectInfo(ConnectInfo, connectDatabase, connectHost, connectPassword, connectPort, connectUser), postgreSQLConnectionString)
 import Database.Squealer.Types       (Database(Database, dbname), unIdentifier)
 import Prelude                       (error)
-import System.Environment            (getArgs)
+import System.Environment            (getArgs, lookupEnv)
 import System.IO                     (IO)
+import Text.Read                     (read)
 import Yesod.Core                    (Approot(ApprootMaster), Yesod(approot, yesodMiddleware), mkYesod, renderRoute)
 import Yesod.Core.Dispatch           (warp)
 import Yesod.Core.Handler            (addHeader, getYesod)
@@ -73,42 +74,37 @@ main
     _ ← pure ([] ∷ [Widget])
     _ ← pure resourcesApp
 
-    (filename : maybeAppRoot)
+    [filename]
       ← getArgs
 
-    let
-      appRoot
-        = maybe "" fromString
-        $ listToMaybe maybeAppRoot
-
-    database
+    database @ Database {..}
       ← either error id
       ∘ decodeEither
       <$> readFile filename
 
+    let
+      defaultDB
+        = T.unpack
+        $ unIdentifier dbname
+
+    appRoot         ← maybe ""        fromString <$> lookupEnv "APPROOT"
+    port            ← maybe 9000      read       <$> lookupEnv "PORT"
+    poolSize        ← maybe 10        read       <$> lookupEnv "POOLSIZE"
+    connectHost     ← maybe ""        fromString <$> lookupEnv "PGHOST"
+    connectPort     ← maybe 5432      read       <$> lookupEnv "PGPORT"
+    connectUser     ← maybe ""        fromString <$> lookupEnv "PGUSER"
+    connectPassword ← maybe ""        fromString <$> lookupEnv "PGPASSWORD"
+    connectDatabase ← maybe defaultDB fromString <$> lookupEnv "DATABASE"
+
     connPool
       ← createPostgresqlPool
-        (connectionString database)
+        (connectionString ConnectInfo {..})
         poolSize
 
     warp
       port
       App { squealer = Squealer {..}, ..}
   where
-    port = 9000
-    poolSize = 10
-
     connectionString
-      Database {..}
       = B8.unpack
       ∘ postgreSQLConnectionString
-      $ connectInfo
-      where
-        connectInfo
-          = ConnectInfo
-            { connectHost     = ""
-            , connectPort     = -1
-            , connectUser     = ""
-            , connectPassword = ""
-            , connectDatabase = T.unpack $ unIdentifier dbname
-            }
