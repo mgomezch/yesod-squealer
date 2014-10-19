@@ -26,9 +26,9 @@ import Control.Category.Unicode     ((∘))
 import Control.Exception            (throwIO)
 import Control.Lens.At              (at)
 import Control.Lens.Lens            ((&), (<&>), Lens')
-import Control.Lens.Fold            (hasn't)
+import Control.Lens.Fold            (has, hasn't)
 import Control.Lens.Prism           (Prism', isn't)
-import Control.Lens.Setter          ((%~), (.~), (<>~), mapped)
+import Control.Lens.Setter          ((%~), (.~), (<>~), (?~), mapped)
 import Control.Lens.Traversal       (Traversal')
 import Control.Lens.Tuple           (_2)
 import Control.Monad                (guard, mzero, void)
@@ -41,9 +41,9 @@ import Data.Eq.Unicode              ((≡))
 import Data.Foldable                (find)
 import Data.Function                (($))
 import Data.Functor                 ((<$), (<$>), fmap)
-import Data.List                    (length, partition, splitAt, unzip, zip)
-import Data.Map                     (empty, fromList, lookup)
-import Data.Maybe                   (Maybe(Just), catMaybes, maybe)
+import Data.List                    (elem, length, null, partition, splitAt, unzip, zip)
+import Data.Map                     (empty, filterWithKey, foldlWithKey', fromList, lookup)
+import Data.Maybe                   (Maybe(Just), catMaybes, fromJust, maybe)
 import Data.Monoid.Unicode          ((⊕))
 import Data.Ord                     ((<), max, min)
 import Data.Siren                   ((↦), (⤠), Entity(entityActions, entityLinks, entityProperties, entitySubEntities), Field(Field, fieldName, fieldTitle, fieldType, fieldValue), FieldType(FieldType), RenderLink, RouteParameters, actionFields, actionMethod, actionTitle, embedEntity, embedLink, embeddingActions, fieldTitle, fieldValue, maybeEmbedded, mkAction, mkEntity, mkField)
@@ -56,7 +56,7 @@ import Database.HsSqlPpp.Annotation (emptyAnnotation)
 import Database.HsSqlPpp.Ast        (Name(Name), NameComponent(Nmc), QueryExpr(Select, Values), ScalarExpr(NumberLit, StringLit), SelectItem(SelExp), SelectItemList, SelectList(SelectList), Statement(Insert, QueryStatement))
 import Database.HsSqlPpp.Quote      (pgsqlStmt, sqlExpr)
 import Database.PostgreSQL.Simple   (execute_, fromOnly, query_)
-import Database.Squealer.Types      (Database(Database, dbname, tables), Table(Table, columns, key, tablename), _Reference, colname, escapeIdentifier, unIdentifier)
+import Database.Squealer.Types      (Column(Attribute, colname, target), Database(Database, dbname, tables), Table(Table, columns, key, tablename), _Reference, escapeIdentifier, unIdentifier)
 import Numeric.Lens                 (decimal)
 import Prelude                      ((+), (-), Integer)
 import Text.Read                    (readMaybe)
@@ -70,6 +70,8 @@ import Yesod.Squealer.Handler         (escape, escapeFieldName, handleParameters
 import Yesod.Squealer.Handler.Version (VersionData(VersionData, attributes, references, revocation, table, timestamp, version), sirenVersion)
 
 import Yesod.Squealer.Routes
+
+import qualified Database.Squealer.Types as S (key, tablename)
 
 
 
@@ -251,6 +253,39 @@ _SelectList
 _SelectList _f s = pure s
 
 
+_SelectWhere ∷ Traversal' QueryExpr (Maybe ScalarExpr)
+_SelectWhere
+  f
+  ( Select
+    annotation
+    distinct
+    project
+    from
+    where_
+    group
+    having
+    order
+    limit
+    offset
+  )
+  = mk <$> f where_
+  where
+    mk where_'
+      = Select
+        annotation
+        distinct
+        project
+        from
+        where_'
+        group
+        having
+        order
+        limit
+        offset
+
+_SelectWhere _f s = pure s
+
+
 _SelectItemList ∷ Lens' SelectList SelectItemList
 _SelectItemList
   f
@@ -352,14 +387,59 @@ getRowsR tablename'
               ⊕ (attributeColumns <&> colname)
               ⊕ (referenceColumns <&> (⊕ " version") ∘ colname)
 
+            addFilters
+              = _QueryExpr
+              ∘ _SelectWhere
+              ?~ foldlWithKey' (∧) [sqlExpr|true|] filters
+              where
+                (∧) acc column value
+                  = [sqlExpr|$(acc) and $i(column_sql) = $s(value_sql)|]
+                  where
+                    column_sql
+                      = unpack (escapeIdentifier tablename)
+                      ⊕ "." ⊕ escape "version"
+                      ⊕ "." ⊕ escape column
+
+                    value_sql
+                      = unpack value
+
+                filters
+                  = filterWithKey isFilterParameter parameters
+                  where
+                    isFilterParameter name _value
+                      = name `elem` colnames
+                      where
+                        theKey k
+                          = if null k
+                            then pure $ Attribute "identity" "uuid"
+                            else k
+
+                        colnames
+                          = [ unIdentifier
+                            $ colname column ⊕ " -> " ⊕ colname targetKeyColumn
+                            | column ← theKey key ⊕ columns
+                            , column & has _Reference
+                            , targetKeyColumn
+                              ← theKey ∘ S.key ∘ fromJust
+                              ∘ find ((target column ≡) ∘ S.tablename)
+                              $ tables
+                            ]
+                          ⊕ [ unIdentifier
+                            $ colname column
+                            | column ← theKey key ⊕ columns
+                            , column & hasn't _Reference
+                            ]
+
             -- Note: This performs poorly in PostgreSQL because of MVCC.
             -- Consider removing the count from the response to improve
-            -- scalability.  Currently, this implies a full seq scan on the
-            -- active rows table.
+            -- scalability.  Currently, this implies a full seq scan on
+            -- the active rows table.
             countSQL
-              = [pgsqlStmt|
-                  select count(*)
-                  from   $i(table_sql)."active"
+              = addFilters
+                [pgsqlStmt|
+                  select     count(*)
+                  from       $i(table_sql)."active"
+                  inner join $i(table_sql)."version" using ("entry")
                   ;
                 |]
 
@@ -368,6 +448,7 @@ getRowsR tablename'
               where
                 versionsSQL
                   = maybeEmbedded id addColumns
+                  $ addFilters
                     [pgsqlStmt|
                       select     "version"."entry" :: text
                       from       $i(table_sql)."active"
@@ -382,7 +463,6 @@ getRowsR tablename'
                     limit_sql  = number limit
                     offset_sql = number offset
                     number = NumberLit emptyAnnotation ∘ show
-                    -- TODO: filtering
 
                     addColumns
                       = _QueryExpr
