@@ -2,7 +2,7 @@
 
 { cabal, aeson, attoparsec, baseUnicodeSymbols, dataDefault
 , groundhog, groundhogPostgresql, hssqlppp, httpTypes, lens
-, monadLogger, mtl, network, postgresqlSimple, resourcePool
+, monadLogger, mtl, networkUri, postgresqlSimple, resourcePool
 , squealer, text, transformers, unorderedContainers, yaml
 , yesodCore, yesodRoutes
 }:
@@ -15,8 +15,8 @@ cabal.mkDerivation (self: {
   isExecutable = true;
   buildDepends = [
     aeson attoparsec baseUnicodeSymbols dataDefault groundhog
-    groundhogPostgresql hssqlppp httpTypes lens monadLogger mtl network
-    postgresqlSimple resourcePool squealer text transformers
+    groundhogPostgresql hssqlppp httpTypes lens monadLogger mtl
+    networkUri postgresqlSimple resourcePool squealer text transformers
     unorderedContainers yaml yesodCore yesodRoutes
   ];
   meta = {
