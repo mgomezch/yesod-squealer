@@ -40,10 +40,9 @@ import Database.PostgreSQL.Simple.Types (Query)
 import Database.Squealer.Types          (Identifier(Identifier), escapeIdentifier)
 import Network.URI                      (escapeURIString, isUnreserved)
 import System.IO                        (IO, putStr)
-import Yesod.Core                       (getRouteToParent)
+import Yesod.Core                       (Route, getRouteToParent)
 import Yesod.Core.Handler               (getCurrentRoute, getRequest, getUrlRenderParams, getYesod, redirect)
 import Yesod.Core.Types                 (reqGetParams)
-import Yesod.Routes.Class               (Route)
 
 import Yesod.Squealer.Routes
 

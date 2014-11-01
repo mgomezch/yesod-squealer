@@ -28,9 +28,9 @@ import Data.Monoid.Unicode      ((⊕))
 import Data.Siren               ((⤠), Entity(entityLinks, entityProperties, entityTitle), RenderLink, mkEntity)
 import Data.Text                (Text)
 import Database.Squealer.Types  (Column(Attribute, Reference, colname, coltype, target), Database(Database, dbname, tables), Table(Table, columns, key, tablename), colname, unIdentifier)
+import Yesod.Core               (Route)
 import Yesod.Core.Content       (TypedContent)
 import Yesod.Core.Handler       (notFound, provideRep, selectRep)
-import Yesod.Routes.Class       (Route)
 
 import Yesod.Squealer.Handler (handleParameters)
 

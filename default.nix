@@ -4,7 +4,7 @@
 , groundhog, groundhogPostgresql, hssqlppp, httpTypes, lens
 , monadLogger, mtl, networkUri, postgresqlSimple, resourcePool
 , squealer, text, transformers, unorderedContainers, yaml
-, yesodCore, yesodRoutes
+, yesodCore
 }:
 
 cabal.mkDerivation (self: {
@@ -17,7 +17,7 @@ cabal.mkDerivation (self: {
     aeson attoparsec baseUnicodeSymbols dataDefault groundhog
     groundhogPostgresql hssqlppp httpTypes lens monadLogger mtl
     networkUri postgresqlSimple resourcePool squealer text transformers
-    unorderedContainers yaml yesodCore yesodRoutes
+    unorderedContainers yaml yesodCore
   ];
   meta = {
     description = "Yesod REST API for Squealer databases";

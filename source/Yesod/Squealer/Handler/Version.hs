@@ -59,9 +59,9 @@ import Database.HsSqlPpp.Quote      (sqlExpr)
 import Database.PostgreSQL.Simple   (execute_, query_)
 import Database.Squealer.Types      (Column(Reference, colname, target), Database(Database, dbname, tables), Table(Table, columns, key, tablename), _Reference, colname, escapeIdentifier, unIdentifier)
 import Network.HTTP.Types.Status    (seeOther303)
+import Yesod.Core                   (Route)
 import Yesod.Core.Content           (TypedContent)
 import Yesod.Core.Handler           (getYesod, notFound, provideRep, redirectWith, runRequestBody, selectRep)
-import Yesod.Routes.Class           (Route)
 
 import Yesod.Squealer.Handler (escape, escapeFieldName, handleParameters, runSQL, runSQLDebug)
 

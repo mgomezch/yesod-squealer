@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE Rank2Types          #-}
 {-# LANGUAGE TemplateHaskell     #-}
